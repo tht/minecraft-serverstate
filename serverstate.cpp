@@ -131,10 +131,13 @@ void ServerState::query_server() {
               } while (c && c != '"');
               buffer[bi-1] = 0;
 
-              // Copy description to class
-              if (description) free(description);
-              description = (char*) malloc(strlen(buffer)+1);
-              strcpy(description, buffer);
+              // Copy description to class if changed
+              if (strcmp(description, buffer) != 0) {
+                if (description) free(description);
+                description = (char*) malloc(strlen(buffer)+1);
+                strcpy(description, buffer);
+                Serial.println("Stored changed server descritption.");
+              }
 
               Serial.print("Server Description: "); Serial.println(description);
             }
