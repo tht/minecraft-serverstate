@@ -4,20 +4,18 @@
 
 #include "application.h"
 
-enum server_state_t {
-  STAT_STARTING,
-  STAT_UNKNOWN,
-  STAT_OFFLINE,
-  STAT_NOPLAYERS,
-  STAT_SOMEPLAYERS
-};
-
-extern enum server_state_t server_stat;
-extern uint8_t server_players;
-
 class ServerState {
 
 public:
+
+  enum server_state_t {
+    STAT_STARTING,
+    STAT_UNKNOWN,
+    STAT_OFFLINE,
+    STAT_NOPLAYERS,
+    STAT_SOMEPLAYERS
+  };
+
   ServerState(char* _name, uint16_t _port) { set_server(_name, _port); }
   void set_server(char* _name, uint16_t _port);
   void query_server();
@@ -28,8 +26,9 @@ private:
 
   uint16_t players_max = 0;
   uint16_t players_onl = 0;
+  char *description;
 
-  enum server_state_t server_stat;
+  enum server_state_t server_state;
   uint8_t server_players;
 
   int read_length(TCPClient *client);

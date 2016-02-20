@@ -3,8 +3,7 @@
 void ServerState::set_server(char* _name, uint16_t _port) {
   if (server_name) free(server_name);
 
-  int len = strlen(_name);
-  server_name = (char*) malloc(len+1);
+  server_name = (char*) malloc(strlen(_name)+1);
   strcpy(server_name, _name);
 
   server_port = _port;
@@ -38,7 +37,7 @@ int ServerState::read_int(char *buffer, TCPClient *client, int *ri) {
 }
 
 void ServerState::query_server() {
-  if (!server) {
+  if (!server_name) {
     Serial.println("No server configured, aborting query.");
     return;
   }
@@ -55,7 +54,7 @@ void ServerState::query_server() {
       Serial.print("Remote IP reported as: "); Serial.println(remoteIP);
       Serial.println("Aborting");
       client.stop();
-      server_stat = STAT_UNKNOWN;
+      server_state = STAT_UNKNOWN;
       return;
     }
     Serial.print("Connected to: "); Serial.println(remoteIP);
@@ -131,7 +130,13 @@ void ServerState::query_server() {
                 buffer[bi++] = c;
               } while (c && c != '"');
               buffer[bi-1] = 0;
-              Serial.print("Server Description: "); Serial.println(buffer);
+
+              // Copy description to class
+              if (description) free(description);
+              description = (char*) malloc(strlen(buffer)+1);
+              strcpy(description, buffer);
+
+              Serial.print("Server Description: "); Serial.println(description);
             }
           }
           bi = 0;
@@ -143,7 +148,7 @@ void ServerState::query_server() {
 
       // handle result if there is something
       if (! got_data) {
-        server_stat = STAT_UNKNOWN;
+        server_state = STAT_UNKNOWN;
       }
     }
 
@@ -152,6 +157,6 @@ void ServerState::query_server() {
 
   } else {
     Serial.println("Connection failed :(");
-    server_stat = STAT_OFFLINE;
+    server_state = STAT_OFFLINE;
   }
 }
