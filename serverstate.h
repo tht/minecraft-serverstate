@@ -12,8 +12,7 @@ public:
     STAT_STARTING,
     STAT_UNKNOWN,
     STAT_OFFLINE,
-    STAT_NOPLAYERS,
-    STAT_SOMEPLAYERS
+    STAT_ONLINE
   };
 
   ServerState(char* _name, uint16_t _port) { set_server(_name, _port); }

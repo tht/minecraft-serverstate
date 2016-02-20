@@ -1,5 +1,8 @@
 #include "serverstate.h"
 
+// Length of the receive buffer.
+#define BUFSIZE 32
+
 void ServerState::set_server(char* _name, uint16_t _port) {
   if (server_name) free(server_name);
 
@@ -88,7 +91,7 @@ void ServerState::query_server() {
       int l2 = read_length(&client);
       Serial.print("Length of JSON response: "); Serial.println(l2);
 
-      char buffer[32];
+      char buffer[BUFSIZE];
       bool got_data = false;
       int ri = 0; // ri=reader_index, bi=buffer_index
       for (int bi=0; ri<l2; ri++) {
@@ -105,7 +108,6 @@ void ServerState::query_server() {
               client.read(); ri++; // discard ':'
 
               players_onl = read_int(buffer, &client, &ri);
-              Serial.print("Players online: "); Serial.println(players_onl);
               got_data = true;
 
             } else if (strcmp(buffer, "max") == 0) {
@@ -113,7 +115,6 @@ void ServerState::query_server() {
               client.read(); ri++; // discard ':'
 
               players_max = read_int(buffer, &client, &ri);
-              Serial.print("Max players: "); Serial.println(players_max);
 
             } else if (strcmp(buffer, "description") == 0) {
               while(!client.available()) ;
@@ -128,7 +129,7 @@ void ServerState::query_server() {
                 while(!client.available()) ;
                 c = client.read(); ri++;
                 buffer[bi++] = c;
-              } while (c && c != '"');
+              } while (c && c != '"' && bi < BUFSIZE);
               buffer[bi-1] = 0;
 
               // Copy description to class if changed
@@ -150,7 +151,11 @@ void ServerState::query_server() {
       }
 
       // handle result if there is something
-      if (! got_data) {
+      if (got_data) {
+        server_state = STAT_ONLINE;
+        Serial.print("Players online: "); Serial.print(players_onl);
+        Serial.print("/"); Serial.println(players_max);
+      } else {
         server_state = STAT_UNKNOWN;
       }
     }
