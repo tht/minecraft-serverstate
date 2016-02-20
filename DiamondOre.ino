@@ -2,15 +2,26 @@
 
 #define UPDATE_INTERVAL 30 * 1000 // all 30s
 #define EEPROM_BASE 0x00
-#define EEPROM_HEAD 0x62
+#define EEPROM_HEAD 0x63
+#define MAX_SERVER_NAME 32
 
 ServerState server;
 
 struct {
-  char server_name[32];
-  uint16_t server_port;
+  char server_name[MAX_SERVER_NAME];
+  int32_t server_port;
 } config = { "", 25565 };
 bool config_changed = false;
+
+// Workaround as it seems impossible to use struct member as cloud varibale
+int32_t cloud_port = 0;
+
+void apply_config() {
+  config_changed = true;
+  cloud_port = config.server_port;
+  server.set_server(config.server_name, config.server_port);
+}
+
 
 bool read_config() {
   if (EEPROM.read(EEPROM_BASE) != EEPROM_HEAD) {
@@ -21,7 +32,7 @@ bool read_config() {
 
   Serial.println("EEPROM has a valid header. Reading configuration.");
   EEPROM.get(EEPROM_BASE+1, config);
-  config_changed = true;
+  apply_config();
   return true;
 }
 
@@ -52,9 +63,8 @@ int cloud_set_server(String _server) {
   }
 
   // Check length of servername
-  int max_size = sizeof(config.server_name)-1;
-  if (_server.length() > max_size) {
-    Serial.print("Servername to long. Max is: "); Serial.println(max_size);
+  if (_server.length() > MAX_SERVER_NAME-1) {
+    Serial.print("Servername to long. Max is: "); Serial.println(MAX_SERVER_NAME-1);
     return -1;
   }
 
@@ -66,8 +76,7 @@ int cloud_set_server(String _server) {
   config.server_name[name_length] = 0;
   print_config();
   store_config();
-  server.set_server(config.server_name, config.server_port);
-  config_changed = true;
+  apply_config();
 }
 
 void print_config() {
@@ -79,14 +88,16 @@ void setup() {
   Serial.begin(57600);
   Serial.println("Starting up...");
 
-  // Register configuration function to Particle Cloud
+  // Register configuration function and varibales to Particle Cloud
   Particle.function("setServer", cloud_set_server);
+  Particle.variable("serverName", config.server_name);
+  Particle.variable("serverPort", config.server_port);
+  // additional variables are exported inside the ServerState class
 
   // Try to read configuration from EEPROM
   if (read_config()) {
     Serial.println("Got configuration from EEPROM.");
     print_config();
-    server.set_server(config.server_name, config.server_port);
   }
 }
 

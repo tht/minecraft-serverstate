@@ -138,6 +138,7 @@ void ServerState::query_server() {
                 description = (char*) malloc(strlen(buffer)+1);
                 strcpy(description, buffer);
                 Serial.println("Stored changed server descritption.");
+                Particle.variable("Description", description);
               }
 
               Serial.print("Server Description: "); Serial.println(description);

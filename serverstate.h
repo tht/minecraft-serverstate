@@ -15,7 +15,12 @@ public:
     STAT_ONLINE
   };
 
-  ServerState() { }
+  ServerState() {
+    // Register status variables
+    Particle.variable("PlayersOnl", players_onl);
+    Particle.variable("PlayersMax", players_max);
+    Particle.variable("Desc", "(not known yet)"); // Will be overwritten later
+  }
   ServerState(char* _name, uint16_t _port) { set_server(_name, _port); }
   void set_server(char* _name, uint16_t _port);
   void query_server();
@@ -25,16 +30,16 @@ public:
   int get_players_online() {return players_onl;}
   int get_max_players() {return players_max;}
 
+  // State
+  int32_t players_max = 0;
+  int32_t players_onl = 0;
+  char *description;
+  enum server_state_t server_state;
+
 private:
   // Configuration
   char *server_name;
   uint16_t server_port;
-
-  // State
-  uint16_t players_max = 0;
-  uint16_t players_onl = 0;
-  char *description;
-  enum server_state_t server_state;
 
   int read_length(TCPClient *client);
   int read_int(char *buffer, TCPClient *client, int *ri);
