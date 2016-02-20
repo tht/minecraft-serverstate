@@ -19,7 +19,7 @@ public:
     // Register status variables
     Particle.variable("PlayersOnl", players_onl);
     Particle.variable("PlayersMax", players_max);
-    Particle.variable("Desc", "(not known yet)"); // Will be overwritten later
+    Particle.variable("Description", "(not known yet)"); // Will be overwritten later
   }
   ServerState(char* _name, uint16_t _port) { set_server(_name, _port); }
   void set_server(char* _name, uint16_t _port);
