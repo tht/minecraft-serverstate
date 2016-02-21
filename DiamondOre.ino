@@ -1,9 +1,32 @@
+#include "neopixel.h"
 #include "serverstate.h"
 
 #define UPDATE_INTERVAL 30 * 1000 // all 30s
 #define EEPROM_BASE 0x00
 #define EEPROM_HEAD 0x63
 #define MAX_SERVER_NAME 32
+
+// IMPORTANT: Set pixel COUNT, PIN and TYPE
+#define PIXEL_PIN D6
+#define PIXEL_COUNT 10
+#define PIXEL_TYPE WS2812B
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE);
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  if(WheelPos < 85) {
+   return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if(WheelPos < 170) {
+   WheelPos -= 85;
+   return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+   WheelPos -= 170;
+   return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+
 
 ServerState server;
 
@@ -88,6 +111,10 @@ void setup() {
   Serial.begin(57600);
   Serial.println("Starting up...");
 
+  // Init NeoPixel strip
+  strip.begin();
+  strip.show();
+
   // Register configuration function and varibales to Particle Cloud
   Particle.function("setServer", cloud_set_server);
   Particle.variable("serverName", config.server_name);
@@ -104,6 +131,28 @@ void setup() {
 void loop() {
   static unsigned long lastChecked = 0;
   static unsigned int numRepeats = 0;
+
+
+  // Rainbow animation for testing
+  static uint8_t j;
+  static unsigned long lastAnimation = 0;
+  static uint8_t brightness = 75;
+
+  if (millis() - lastAnimation > 20) {
+    lastAnimation = millis(); j++;
+
+    if (brightness < min(server.get_players_online()*255, 255)) {
+      brightness += 2;
+    } else if (brightness > 77) {
+      brightness -= 2;
+    }
+    strip.setBrightness(brightness);
+
+    for(uint16_t i=0; i<strip.numPixels(); i++) {
+      strip.setPixelColor(i, Wheel((i+j) & 255));
+    }
+    strip.show();
+  }
 
   if (config_changed || millis() - lastChecked > (unsigned long) UPDATE_INTERVAL) {
     config_changed = false;
