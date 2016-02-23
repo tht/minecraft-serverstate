@@ -136,14 +136,18 @@ void loop() {
   // Rainbow animation for testing
   static uint8_t j;
   static unsigned long lastAnimation = 0;
-  static uint8_t brightness = 75;
+  static uint8_t brightness = 150;
+  static unsigned long ledWait = 0;
 
-  if (millis() - lastAnimation > 20) {
-    lastAnimation = millis(); j++;
+  if (millis() - lastAnimation > ledWait) {
+    lastAnimation = millis();
+
+/*
+    j++;
 
     if (brightness < min(server.get_players_online()*255, 255)) {
       brightness += 2;
-    } else if (brightness > 77) {
+    } else if (brightness > 57) {
       brightness -= 2;
     }
     strip.setBrightness(brightness);
@@ -151,6 +155,33 @@ void loop() {
     for(uint16_t i=0; i<strip.numPixels(); i++) {
       strip.setPixelColor(i, Wheel((i+j) & 255));
     }
+    */
+
+    int r, g, b, flicker;
+    if (server.get_state() != ServerState::STAT_ONLINE) {
+      r = 220;
+      g = 50;
+      b = 35;
+      ledWait = random(50, 300);
+      flicker = random(50, 150);
+
+    } else {
+      ledWait = random(500, 1000);
+      flicker = random(75, 100);
+      if (server.get_players_online()) {
+        // Player online, diamond block!
+        r = 35;
+        g = 50;
+        b = 220;
+
+      } else { // No player - gold block
+        r = 255;
+        g = r-40;
+        b = 40;
+      }
+    }
+
+    strip.setPixelColor(random(0, 10), max(0, r-flicker), max(0, g-flicker), max(0, b-flicker));
     strip.show();
   }
 
