@@ -27,6 +27,43 @@ uint32_t Wheel(byte WheelPos) {
   }
 }
 
+int cloud_set_colors(String _colors) {
+  Serial.print("Received new colors from the cloud: "); Serial.println(_colors);
+  int col[3] = { 0, 0, 0};
+
+  int ci = 0;
+  for (int i=0; i<_colors.length(); i++) {
+    char c = _colors.charAt(i);
+    if (c >= '0' && c <= '9') {
+      col[ci] = 10 * col[ci] + (c - '0');
+    } else if (c == ';') {
+      if (ci++ > 2) {
+        Serial.println("Too many numbers in string. Aborting.");
+        return -1;
+      }
+    } else {
+      Serial.println("Invalid character in string. Aborting.");
+      Serial.println(c);
+      return -2;
+    }
+  }
+
+  if (ci != 2) {
+    Serial.println("Not enough numbers in string. Aborting.");
+    return -3;
+  }
+
+  // TODO: Check if all values are in range 0-255
+
+  // All looks good
+  for (int i=0; i<PIXEL_COUNT; i++) {
+    strip.setPixelColor(i, col[0], col[1], col[2]);
+  }
+  strip.show();
+
+  return 0;
+}
+
 
 ServerState server;
 
@@ -117,6 +154,7 @@ void setup() {
 
   // Register configuration function and varibales to Particle Cloud
   Particle.function("setServer", cloud_set_server);
+  Particle.function("setColors", cloud_set_colors);
   Particle.variable("serverName", config.server_name);
   Particle.variable("serverPort", config.server_port);
   // additional variables are exported inside the ServerState class
@@ -159,29 +197,27 @@ void loop() {
 
     int r, g, b, flicker;
     if (server.get_state() != ServerState::STAT_ONLINE) {
-      r = 220;
-      g = 50;
-      b = 35;
+      r = 255;
+      g = 30;
+      b = 5;
       ledWait = random(50, 300);
-      flicker = random(50, 150);
 
     } else {
       ledWait = random(500, 1000);
-      flicker = random(75, 100);
       if (server.get_players_online()) {
         // Player online, diamond block!
-        r = 35;
-        g = 50;
-        b = 220;
+        r = 150;
+        g = 175;
+        b = 255;
 
       } else { // No player - gold block
         r = 255;
-        g = r-40;
-        b = 40;
+        g = 125;
+        b = 10;
       }
     }
-
-    strip.setPixelColor(random(0, 10), max(0, r-flicker), max(0, g-flicker), max(0, b-flicker));
+    flicker = random(0, 24) - 12;
+    strip.setPixelColor(random(0, 10), max(0, min(255,r+flicker)), max(0, min(255,g+flicker)), max(0, min(255,b+flicker)));
     strip.show();
   }
 
